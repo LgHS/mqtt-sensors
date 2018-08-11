@@ -2,6 +2,7 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 
+// Ajouter flag retain + QOS
 
 #define mqtt_server "192.168.43.3"
 #define mqtt_user "sensors"
@@ -17,6 +18,8 @@ int window_val = 0;
 
 int door_inputPin = D2;
 int door_val = 0;
+
+int firstboot = 1;
 
 
 WiFiClient espClient;
@@ -75,15 +78,17 @@ void loop() {
   if (!client.connected()) {
     reconnect();
   }
+
+
     window_val = digitalRead(window_inputPin);
-    if ((window_val == 1))
+    if ((window_val == 1) && (firstboot == 1))
     {
       digitalWrite(LED_BUILTIN, HIGH);
       client.publish(window_topic, "open");
       Serial.println("Window OPEN");
       digitalWrite(LED_BUILTIN, LOW);
     }
-    if ((window_val == 0))
+    if ((window_val == 0) && (firstboot == 1))
     {
       digitalWrite(LED_BUILTIN, HIGH);
       client.publish(window_topic, "close");
@@ -92,25 +97,31 @@ void loop() {
     }
     
     door_val = digitalRead(door_inputPin);
-    if ((door_val == 1))
+    if ((door_val == 1) && (firstboot == 1))
     {
       digitalWrite(LED_BUILTIN, HIGH);
       client.publish(door_topic, "open");
       Serial.println("Door OPEN");
       digitalWrite(LED_BUILTIN, LOW);
     }
-    if ((door_val == 0))
+    if ((door_val == 0) && (firstboot == 1))
     {
       digitalWrite(LED_BUILTIN, HIGH);
       client.publish(door_topic, "close");
       Serial.println("Door CLOSE");
       digitalWrite(LED_BUILTIN, LOW);
     }
-    delay(15000);
+firstboot = 0;
+
+
+    delay(500);
 
 }
 
 void window_interrup() {
+  if (!client.connected()) {
+    reconnect();
+  }
   window_val = digitalRead(window_inputPin);
   if ((window_val == 1))
     {
@@ -128,6 +139,9 @@ void window_interrup() {
     }
 }
 void door_interrup() {
+  if (!client.connected()) {
+    reconnect();
+  }
   door_val = digitalRead(door_inputPin);
   if ((door_val == 1))
     {
